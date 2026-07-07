@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roundel Explorer — A Vexillological Taxonomy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20260707c">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <h1>Roundel Explorer</h1>
+        <p class="header-sub">A Vexillological Taxonomy of Aircraft Identification Marks</p>
+      </div>
+      <nav class="main-nav">
+        <span class="nav-indicator" aria-hidden="true"></span>
+        <button class="nav-btn active" data-view="globe">Globe</button>
+        <button class="nav-btn" data-view="gallery">Gallery</button>
+        <button class="nav-btn" data-view="legend">Legend</button>
+        <button class="nav-btn" data-view="similar">Similar</button>
+        <button class="nav-btn" data-view="about">About</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- GLOBE VIEW -->
+  <div id="view-globe" class="view active">
+    <div id="globe-container"></div>
+    <div id="globe-legend">
+      <p class="legend-label">Translation Method</p>
+      <div class="legend-items"></div>
+    </div>
+    <div id="globe-hint">Click any roundel to explore</div>
+  </div>
+
+  <!-- GALLERY VIEW -->
+  <div id="view-gallery" class="view">
+    <aside class="gallery-sidebar">
+      <div class="filter-section">
+        <h3>Translation Method</h3>
+        <div id="filter-taxonomy" class="filter-group"></div>
+      </div>
+      <div class="filter-section">
+        <h3>Features</h3>
+        <label class="filter-check">
+          <input type="checkbox" id="filter-symbol"> Center symbol
+        </label>
+        <label class="filter-check">
+          <input type="checkbox" id="filter-collapse"> Design collapse risk
+        </label>
+      </div>
+      <div class="filter-section">
+        <h3>Search</h3>
+        <input type="text" id="search-input" placeholder="Country name…" class="search-box">
+      </div>
+      <div class="filter-section">
+        <p class="result-count"><span id="result-count">119</span> roundels</p>
+      </div>
+    </aside>
+    <main class="gallery-main">
+      <div id="gallery-grid" class="gallery-grid"></div>
+    </main>
+  </div>
+
+  <!-- LEGEND VIEW -->
+  <div id="view-legend" class="view">
+    <div class="legend-content">
+      <div class="legend-intro">
+        <h2>How to Read a Roundel</h2>
+        <p>Every roundel in this database is described by a small row of symbols — a grammar borrowed from vexillology (the FIAV / IFIS system) and extended with a translation taxonomy specific to aircraft markings. This legend explains each glyph.</p>
+      </div>
+      <div id="legend-ifis" class="legend-block"></div>
+      <div id="legend-methods" class="legend-block"></div>
+    </div>
+  </div>
+
+  <!-- SIMILAR VIEW -->
+  <div id="view-similar" class="view">
+    <div class="similar-header">
+      <h2>Design Relationships</h2>
+      <p>Roundels grouped by visual and structural similarity — revealing how nations converged on identical solutions, and where confusion becomes possible.</p>
+    </div>
+    <div id="collapse-alert" class="collapse-section">
+      <h3 class="collapse-title">⚠ Design Collapse Pairs</h3>
+      <p class="collapse-sub">These roundels are so visually similar they risk misidentification.</p>
+      <div id="collapse-grid"></div>
+    </div>
+    <div id="similar-clusters"></div>
+  </div>
+
+  <!-- ABOUT VIEW -->
+  <div id="view-about" class="view">
+    <div class="about-content">
+      <h2>About This Database</h2>
+      <p>This interactive tool accompanies the paper <em>From Flags to Flight: The Vexillological Evolution of Aircraft Identification from Maritime Law to Modern Livery</em>, presented at ICV31 — the 31st International Congress of Vexillology.</p>
+      <h3>The Three Translation Methods</h3>
+      <p>Every roundel is classified by <em>how</em> it translates its national flag into a circular aircraft marking. The taxonomy reduces to three primary methods, each with variants — explained in full on the <button class="inline-link" data-view="legend">Legend</button> page.</p>
+      <dl class="taxonomy-definitions">
+        <dt><span class="tax-badge" data-method="Radial">Radial</span></dt>
+        <dd>The flag's stripes are wrapped into concentric rings around a center. Horizontal tribands rotate around the bottom edge; vertical tribands around the hoist. Variants cover inversion, segmentation, preserved or internalized hoist elements, and added charges. France (1912) established the template.</dd>
+        <dt><span class="tax-badge" data-method="Punch">Punch</span></dt>
+        <dd>A self-contained charge is extracted — "punched" — from the flag and set directly in the disc, carrying the flag's meaning without needing its field. Japan's hinomaru is the purest case.</dd>
+        <dt><span class="tax-badge" data-method="Non Sequitur">Non Sequitur</span></dt>
+        <dd>The roundel does not follow from the current flag: an inherited template (RAF-style tricolors kept across the Commonwealth), an abandoned older design, or a symbol from military heraldry. Not a failure — an acknowledgement that some flags have no clean circular translation.</dd>
+      </dl>
+      <h3>Data</h3>
+      <p>Database covers 119 nations with roundels in active or historical military use. Images sourced from Wikimedia Commons.</p>
+      <p class="about-credit">Research by M. Giugliano · ICV31 · NAVA 60</p>
+    </div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div id="detail-overlay" class="detail-overlay hidden">
+    <div class="detail-panel">
+      <button class="detail-close" id="detail-close">✕</button>
+      <div class="detail-inner">
+
+        <!-- Images -->
+        <div class="detail-images">
+          <div class="detail-img-wrap">
+            <img id="detail-flag" src="" alt="Flag">
+            <span class="detail-img-label">National Flag</span>
+          </div>
+          <div class="detail-arrow">→</div>
+          <div class="detail-img-wrap">
+            <img id="detail-roundel" src="" alt="Roundel">
+            <span class="detail-img-label">Air Roundel</span>
+          </div>
+        </div>
+
+        <div class="detail-body">
+          <!-- Nation + taxonomy -->
+          <h2 id="detail-nation"></h2>
+          <div class="detail-tax-row">
+            <span id="detail-tax-icon" class="detail-tax-icon"></span>
+            <span id="detail-taxonomy-badge" class="tax-badge"></span>
+          </div>
+          <div id="detail-vex-row" class="detail-vex-row"></div>
+          <p id="detail-tax-description" class="detail-tax-description"></p>
+
+          <!-- Core fields -->
+          <div class="detail-grid">
+            <div class="detail-field">
+              <label>Flag design</label>
+              <span id="detail-flag-desc"></span>
+            </div>
+            <div class="detail-field">
+              <label>Roundel colors</label>
+              <span id="detail-roundel-desc"></span>
+            </div>
+            <div class="detail-field">
+              <label>Full method</label>
+              <span id="detail-tax-raw"></span>
+            </div>
+            <div id="detail-year-wrap" class="detail-field hidden">
+              <label>Year adopted</label>
+              <span id="detail-year"></span>
+            </div>
+            <div id="detail-status-wrap" class="detail-field hidden">
+              <label>Still in use</label>
+              <span id="detail-status"></span>
+            </div>
+            <div id="detail-fiav-wrap" class="detail-field hidden">
+              <label>Flag FIAV usage</label>
+              <span id="detail-fiav"></span>
+            </div>
+            <div id="detail-reverse-wrap" class="detail-field hidden">
+              <label>Flag reverse side</label>
+              <span id="detail-reverse"></span>
+            </div>
+          </div>
+
+          <!-- Fin flash -->
+          <div class="detail-finflash-wrap">
+            <label>Fin flash</label>
+            <div class="detail-finflash-inner">
+              <img id="detail-finflash-img" src="" alt="Fin flash" class="hidden">
+              <span id="detail-fin"></span>
+            </div>
+          </div>
+
+          <!-- Additional roundels: historic, variants, low-vis -->
+          <div id="detail-additional-wrap" class="detail-additional-wrap hidden">
+            <label>Additional roundels</label>
+            <div id="detail-additional-grid" class="detail-additional-grid"></div>
+          </div>
+
+          <!-- Historical notes (shown only if populated) -->
+          <div id="detail-history-wrap" class="detail-notes-wrap hidden">
+            <label>Historical evolution</label>
+            <p id="detail-history"></p>
+          </div>
+
+          <!-- Analysis -->
+          <div class="detail-notes-wrap">
+            <label>Design analysis</label>
+            <p id="detail-notes"></p>
+          </div>
+
+          <!-- Design collapse warning -->
+          <div id="detail-collapse-warn" class="detail-collapse hidden">
+            <strong>⚠ Design Collapse Risk</strong>
+            <span id="detail-collapse-with"></span>
+          </div>
+
+          <!-- Source links -->
+          <div class="detail-links-section">
+            <label>Sources &amp; references</label>
+            <div class="detail-links-row">
+              <a id="detail-commons-link" href="#" target="_blank" class="detail-link hidden">
+                <span class="link-icon">⊞</span> View on Wikimedia Commons
+              </a>
+              <a id="detail-wikimedia-img-link" href="#" target="_blank" class="detail-link hidden">
+                <span class="link-icon">↗</span> Full-resolution roundel image
+              </a>
+            </div>
+            <div id="detail-further-reading" class="detail-further-reading hidden">
+              <span class="further-reading-label">Further reading</span>
+              <div id="detail-further-links"></div>
+            </div>
+          </div>
+
+          <!-- Similar roundels -->
+          <div class="detail-similar-section">
+            <label>Other roundels using this method</label>
+            <div id="detail-similar-row" class="detail-similar-row"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/globe.gl@2.31.0/dist/globe.gl.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="js/app.js?v=20260707c"></script>
+</body>
+</html>

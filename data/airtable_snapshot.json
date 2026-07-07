@@ -1,0 +1,30 @@
+{
+  "_comment": "LOCAL/DEPLOY FALLBACK overlay of the Airtable taxonomy restructure. Used by build_data.py only when AIRTABLE_API_KEY is not set, so the site shows enriched data before the live key is wired. Once AIRTABLE_API_KEY is set (locally or on Netlify) this file is ignored and data comes live from Airtable. Keyed by Nation.",
+  "records": {
+    "France":       {"method": "Radial", "orientation": "Vertical", "variants": [], "flagStatus": "Normal Version", "flagReverse": "Mirror Image (A)", "fiav": "111000", "year": "1912", "inUse": true},
+    "Spain":        {"method": "Radial", "orientation": "Horizontal", "variants": []},
+    "Ireland":      {"method": "Radial", "orientation": "", "variants": ["Segmented"]},
+    "Netherlands":  {"method": "Radial", "orientation": "", "variants": ["Segmented"]},
+    "Zambia":       {"method": "Radial", "orientation": "", "variants": ["Segmented", "+ Charge"]},
+    "Suriname":     {"method": "Radial", "orientation": "Horizontal", "variants": ["Only Some Stripes Used", "+ Charge"], "flagStatus": "Normal Version", "flagReverse": "Congruent (E)", "fiav": "111111", "year": "1975", "inUse": true},
+    "Djibouti":     {"method": "Radial", "orientation": "Horizontal", "variants": ["Hoist Element Internalized", "+ Charge"]},
+    "Gabon":        {"method": "Radial", "orientation": "Horizontal", "variants": ["Inverted / Counterclockwise"], "flagStatus": "Normal Version", "flagReverse": "Congruent (E)", "fiav": "111111", "year": "1960", "inUse": true},
+    "Ukraine":      {"method": "Radial", "orientation": "Horizontal", "variants": ["Inverted / Counterclockwise"]},
+    "Rwanda":       {"method": "Radial", "orientation": "Horizontal", "variants": ["Inverted / Counterclockwise", "+ Charge"]},
+    "South Sudan":  {"method": "Radial", "orientation": "Horizontal", "variants": ["+ Hoist Element"]},
+    "Sudan":        {"method": "Radial", "orientation": "Horizontal", "variants": ["+ Hoist Element"]},
+    "Zimbabwe":     {"method": "Radial", "orientation": "Horizontal", "variants": ["Only Some Stripes Used", "Hoist Element Internalized"]},
+    "Botswana":     {"method": "Radial", "orientation": "Horizontal", "variants": ["Only Some Stripes Used"]},
+    "Kuwait":       {"method": "Radial", "orientation": "Horizontal", "variants": ["Hoist Element Internalized"]},
+    "India":        {"method": "Radial", "orientation": "Horizontal", "variants": ["+ Charge"], "flagStatus": "Normal Version", "flagReverse": "Congruent (E)", "fiav": "111000", "year": "1950", "inUse": true},
+    "Argentina":    {"method": "Radial", "orientation": "Horizontal", "variants": ["- Charge"]},
+    "Japan":        {"method": "Punch", "orientation": "", "variants": []},
+    "Panama":       {"method": "Punch", "orientation": "", "variants": ["+ Winged Roundel"]},
+    "South Korea":  {"method": "Punch", "orientation": "", "variants": ["+ Winged Roundel"]},
+    "USA":          {"method": "Non Sequitur", "orientation": "", "variants": ["+ Winged Roundel"]},
+    "Montenegro":   {"method": "Non Sequitur", "orientation": "", "variants": ["+ Winged Roundel"]},
+    "Austria":      {"method": "Non Sequitur", "orientation": "", "variants": []},
+    "Sweden":       {"method": "Non Sequitur", "orientation": "", "variants": []},
+    "Antigua and Barbuda": {"method": "Non Sequitur", "orientation": "", "variants": []}
+  }
+}
