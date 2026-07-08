@@ -12,8 +12,8 @@ Usage:
 After updating taxonomy or other fields in Airtable, re-run this script
 and the website will pick up the changes on next page load.
 """
-import json, os, sys, shutil
-from urllib.parse import quote, urlencode
+import json, os, sys, shutil, re, hashlib
+from urllib.parse import quote, unquote, urlencode
 from urllib.request import urlopen, Request
 
 HERE = os.path.dirname(__file__)
@@ -517,6 +517,52 @@ def wikimedia_urls(img_filename):
     file_page = f"https://commons.wikimedia.org/wiki/File:{encoded}"
     return special, file_page
 
+def commons_thumb_url(filename, width=500):
+    """Direct Wikimedia CDN thumbnail URL for a Commons file.
+    IMPORTANT: we hit upload.wikimedia.org (Varnish CDN, built for scale) rather
+    than commons.wikimedia.org/Special:FilePath, which rate-limits (HTTP 429) when
+    a page loads 100+ images at once — that caused roundels to randomly vanish on
+    refresh."""
+    fn = (filename or "").replace(" ", "_")
+    if fn.endswith(".svg.png"):        # our DB convention → real Commons name
+        fn = fn[:-4]
+    md5 = hashlib.md5(fn.encode("utf-8")).hexdigest()
+    a, ab = md5[0], md5[:2]
+    enc = quote(fn, safe="().-_–'!")
+    base = "https://upload.wikimedia.org/wikipedia/commons"
+    low = fn.lower()
+    if low.endswith(".svg"):           # SVG → rasterized thumbnail
+        return f"{base}/thumb/{a}/{ab}/{enc}/{width}px-{enc}.png"
+    if low.endswith((".png", ".jpg", ".jpeg", ".gif")):
+        return f"{base}/thumb/{a}/{ab}/{enc}/{width}px-{enc}"
+    # Unknown/extensionless: fall back to the (rate-limited) resolver endpoint.
+    return f"https://commons.wikimedia.org/wiki/Special:FilePath/{enc}"
+
+
+def commons_file_page(filename):
+    fn = (filename or "").replace(" ", "_")
+    if fn.endswith(".svg.png"):
+        fn = fn[:-4]
+    return f"https://commons.wikimedia.org/wiki/File:{quote(fn, safe='().-_–!')}"
+
+
+def resolve_image_ref(ref):
+    """A roundel image reference from Airtable → (image_src_url, commons_page_url).
+    Accepts a bare Commons filename ("Roundel_of_Spain.svg"), a Commons "File:" page
+    URL, a Special:FilePath URL, or any direct image URL. Bare filenames and Commons
+    links become fast CDN thumbnail URLs; already-direct URLs are used as-is."""
+    ref = (ref or "").strip()
+    if not ref:
+        return "", ""
+    if ref.startswith("http"):
+        m = re.search(r'Special:FilePath/([^?]+)', ref) or re.search(r'/wiki/(?:File|Image):(.+)$', ref)
+        if m:
+            fn = unquote(m.group(1))
+            return commons_thumb_url(fn), commons_file_page(fn)
+        return ref, ""                          # already a usable direct URL
+    return commons_thumb_url(ref), commons_file_page(ref)   # bare Commons filename
+
+
 def apply_manual_collapse(record):
     nation = record["nation"]
     if nation in MANUAL_COLLAPSE:
@@ -537,19 +583,22 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
         file already present."""
         fn = (att or {}).get("filename", "")
         if fn:
-            special, _ = wikimedia_urls(fn if fn.endswith(".png") else fn + ".png")
-            if special:
-                return special
+            return commons_thumb_url(fn)
         url = (att or {}).get("url", "")
         if url and download_attachment(url, os.path.join(HERE, local_rel)):
             return local_rel
         return ""
 
-    # Low-vis roundel
+    # Low-vis roundel — prefer the "Low-Vis File" text field (Commons name/URL),
+    # then the attachment, then any local file.
     low_vis_image = ""
-    lv_atts = extra.get("Low-Vis Attach", [])
-    if lv_atts:
-        low_vis_image = resolve_attachment(lv_atts[0], f"images/lowvis/{slug}.png")
+    lv_file = extra.get("Low-Vis File", "")
+    if lv_file:
+        low_vis_image = resolve_image_ref(lv_file)[0]
+    if not low_vis_image:
+        lv_atts = extra.get("Low-Vis Attach", [])
+        if lv_atts:
+            low_vis_image = resolve_attachment(lv_atts[0], f"images/lowvis/{slug}.png")
     if not low_vis_image:
         for ext in ("png", "svg"):
             cand = f"images/lowvis/{slug}.{ext}"
@@ -557,12 +606,28 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
                 low_vis_image = cand
                 break
 
-    # Additional roundels (historic / variants) — {src, label} each
+    # Additional roundels (historic / variants) — {src, label} each.
+    # Prefer the "Additional Files" text field (one ref per line, optional "| Label").
     additional_images = []
-    for i, att in enumerate(extra.get("Additional Attach", []) or []):
-        src = resolve_attachment(att, f"images/additional/{slug}-{i}.png")
-        if src:
-            additional_images.append({"src": src, "label": label_from_filename(att.get("filename", ""))})
+    add_text = extra.get("Additional Files", "")
+    if add_text:
+        for line in add_text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if "|" in line:
+                ref, label = line.split("|", 1)
+                ref, label = ref.strip(), label.strip()
+            else:
+                ref, label = line, label_from_filename(line)
+            src = resolve_image_ref(ref)[0]
+            if src:
+                additional_images.append({"src": src, "label": label or label_from_filename(ref)})
+    else:
+        for i, att in enumerate(extra.get("Additional Attach", []) or []):
+            src = resolve_attachment(att, f"images/additional/{slug}-{i}.png")
+            if src:
+                additional_images.append({"src": src, "label": label_from_filename(att.get("filename", ""))})
 
     primary_method, sub_method = normalize_taxonomy(tax_raw)
     # New component taxonomy (Method/Orientation/Variants) supersedes the
@@ -573,7 +638,7 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
     if extra.get("Method"):
         primary_method = method
         sub_method = ", ".join(filter(None, [orientation, *variants]))
-    wikimedia_img, commons_page = wikimedia_urls(img)
+    roundel_src, commons_page = resolve_image_ref(img)
     is_collapse, collapse_with = detect_design_collapse(notes)
 
     rec = {
@@ -582,7 +647,7 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
         "lng":             coords[1],
         "iso":             iso,
         "flagUrl":         f"https://flagcdn.com/w160/{iso}.png" if iso else "",
-        "roundelImage":    wikimedia_img if wikimedia_img else "",  # Wikimedia Commons direct URL
+        "roundelImage":    roundel_src,   # live image URL (Commons or pasted)
         "roundelImageFile": img,
         "flagDescription":  flag_desc,
         "roundelDescription": roundel_desc,
@@ -595,8 +660,9 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
         "hasCenterSymbol":  has_center_symbol(tax_raw, roundel_desc),
         "designCollapse":   is_collapse,
         "designCollapseWith": collapse_with,
-        "wikimediaUrl":     wikimedia_img,
+        "wikimediaUrl":     roundel_src,
         "commonsPage":      commons_page,
+        "relatedNations":   extra.get("Related Nations", []),
         # Component taxonomy + IFIS flag facts (from Airtable 2026-07 restructure)
         "method":          method,
         "radialOrientation": orientation,
@@ -611,7 +677,7 @@ def build_record(nation, tax_raw, flag_desc, roundel_desc, fin_flash, notes, img
         "furtherReading": extra.get("Further Reading", ""),
         "lowVisImage":    low_vis_image,
         "additionalImages": additional_images,
-        "hasRoundel":     bool(wikimedia_img),
+        "hasRoundel":     bool(roundel_src),
     }
     apply_manual_collapse(rec)
     return rec
@@ -632,6 +698,7 @@ def fetch_from_airtable():
         "Flag Status (IFIS)", "Flag Reverse Side (IFIS)", "Flag FIAV Code",
         "Year Adopted", "Still In Use", "Historical Notes", "Further Reading",
         "Low-Vis Roundel", "Additional Roundels",
+        "Low-Vis File", "Additional Files", "Related Roundels",
     ]
     params = {"fields[]": field_names, "pageSize": "100"}
 
@@ -696,10 +763,20 @@ def fetch_from_airtable():
                 "Further Reading":    (f.get("Further Reading") or "").strip(),
                 "Low-Vis Attach":     _attachments(f.get("Low-Vis Roundel")),
                 "Additional Attach":  _attachments(f.get("Additional Roundels")),
+                "Low-Vis File":       (f.get("Low-Vis File") or "").strip(),
+                "Additional Files":   (f.get("Additional Files") or "").strip(),
+                "_id":                r.get("id", ""),
+                "_related_ids":       [x if isinstance(x, str) else x.get("id")
+                                       for x in (f.get("Related Roundels") or [])],
             })
         offset = data.get("offset")
         if not offset:
             break
+
+    # Resolve Related Roundels (linked record IDs) → nation names
+    id2nation = {row["_id"]: row["Nation"] for row in rows if row.get("_id")}
+    for row in rows:
+        row["Related Nations"] = [id2nation[i] for i in row.get("_related_ids", []) if i in id2nation]
     return rows
 
 

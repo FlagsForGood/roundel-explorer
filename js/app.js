@@ -355,6 +355,7 @@ function makeGlobeMarker(d) {
   el.style.setProperty('--marker-sz', sz + 'px');
 
   const img = document.createElement('img');
+  img.referrerPolicy = 'no-referrer';
   img.src = d.roundelImage;
   img.alt = d.nation;
   img.onerror = () => { img.style.display = 'none'; };
@@ -462,9 +463,9 @@ function buildGallery() {
     card.className = 'gallery-card';
     card.innerHTML = `
       <div class="card-images">
-        <img class="card-flag" src="${d.flagUrl}" alt="${d.nation} flag" onerror="this.style.display='none'">
+        <img class="card-flag" src="${d.flagUrl}" alt="${d.nation} flag" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">
         <span class="card-arrow">→</span>
-        <img class="card-roundel" src="${d.roundelImage}" alt="${d.nation} roundel" onerror="this.style.opacity='.2'">
+        <img class="card-roundel" src="${d.roundelImage}" alt="${d.nation} roundel" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.opacity='.2'">
       </div>
       <div class="card-body">
         <div class="card-nation">${d.nation}</div>
@@ -820,11 +821,18 @@ function openDetail(d) {
     frWrap.classList.add('hidden');
   }
 
-  // Similar roundels — same primary method, prefer same sub-method first
-  const similar = allData
-    .filter(r => r.nation !== d.nation && r.primaryMethod === d.primaryMethod)
-    .sort((a, b) => (b.subMethod === d.subMethod ? 1 : 0) - (a.subMethod === d.subMethod ? 1 : 0))
-    .slice(0, 8);
+  // Related roundels — use the manually-curated list from Airtable if present,
+  // otherwise auto-fill from nations sharing the same method.
+  let similar;
+  if (Array.isArray(d.relatedNations) && d.relatedNations.length) {
+    const byName = Object.fromEntries(allData.map(r => [r.nation, r]));
+    similar = d.relatedNations.map(n => byName[n]).filter(Boolean);
+  } else {
+    similar = allData
+      .filter(r => r.nation !== d.nation && r.primaryMethod === d.primaryMethod)
+      .sort((a, b) => (b.subMethod === d.subMethod ? 1 : 0) - (a.subMethod === d.subMethod ? 1 : 0))
+      .slice(0, 8);
+  }
   const row = document.getElementById('detail-similar-row');
   row.innerHTML = '';
   similar.forEach(r => {
